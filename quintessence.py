@@ -31,18 +31,20 @@ class GameBoard(tk.Frame):
             pieces = board.p1_pieces + board.p2_pieces
             for piece in pieces:
                 if abs(piece.column - event.x) < 20 and abs(piece.row - event.y) < 20:
-                    print event.x
-                    for n in range(len(board.grid_steps)):
-                        if event.x < board.grid_steps[n]:
-                            print "column is %d" % n
-                            break
-                    for n in range(len(board.grid_steps)):
-                        if event.y < board.grid_steps[n]:
-                            print "row is %d" % n
-                            break
                     board.selected = piece
+                    break
         elif board.selected:
-            if board.selected.move(event.y, event.x):
+            for n in range(len(board.grid_steps)):
+                if event.x < board.grid_steps[n]:
+                    print "column is %d" % n
+                    board.selected.column = board.grid_steps[n] - (board.size / 2)
+                    break
+            for n in range(len(board.grid_steps)):
+                if event.y < board.grid_steps[n]:
+                    print "row is %d" % n
+                    board.selected.row = board.grid_steps[n] - (board.size / 2)
+                    break            
+            if board.selected.move():
                 board.selected = None
 
     def refresh(self, event):
@@ -61,9 +63,9 @@ class GameBoard(tk.Frame):
                 self.canvas.create_rectangle(x1, y1, x2, y2, outline="black", fill=color, tags="square")
                 color = self.color1 if color == self.color2 else self.color2
         for piece in self.p2_pieces:
-            piece.move(piece.row, piece.column)
+            piece.move()
         for piece in self.p1_pieces:
-            piece.move(piece.row, piece.column)
+            piece.move()
         self.canvas.tag_raise("piece")
         self.canvas.tag_lower("square")
 
@@ -88,18 +90,16 @@ class Piece(object):
             self.board.p2_pieces.append(self)   
         self.board.canvas.coords(self.name, self.column, self.row)
 
-    def move(self, row, column):
-        if self.element == "air":
-            if abs(column - self.column) <= self.board.size * 4 and abs(row - self.row) < 20:
-                self.row = row
-                self.column = column
-                self.board.canvas.coords(self.name, column, row)
-                return True
-            else:
-                return False
-        self.row = row
-        self.column = column
-        self.board.canvas.coords(self.name, column, row)
+    def move(self):
+        # if self.element == "air":
+        #     if abs(column - self.column) <= self.board.size * 4 and abs(row - self.row) < 20:
+        #         self.row = row
+        #         self.column = column
+        #         self.board.canvas.coords(self.name, column, row)
+        #         return True
+        #     else:
+        #         return False
+        self.board.canvas.coords(self.name, self.column, self.row)
         return True
 
 
