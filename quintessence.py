@@ -12,7 +12,7 @@ class GameBoard(tk.Frame):
         self.p1_pieces = []
         self.p2_pieces = []
         self.selected = None
-        self.grid_steps = [(n * size) - n for n in range(rows + 1)]
+        self.grid_steps = self.calculate_grid()
         print self.grid_steps
 
         canvas_width = columns * size
@@ -26,6 +26,9 @@ class GameBoard(tk.Frame):
 
         self.canvas.pack(side="top", fill="both", expand=True, padx=2, pady=2)
 
+    def calculate_grid(self):
+        return [(n * self.size) for n in range(self.rows + 1)]
+
     def callback(self, event, board):
         if not board.selected:
             pieces = board.p1_pieces + board.p2_pieces
@@ -37,12 +40,14 @@ class GameBoard(tk.Frame):
             for n in range(len(board.grid_steps)):
                 if event.x < board.grid_steps[n]:
                     print "column is %d" % n
-                    board.selected.column = board.grid_steps[n] - (board.size / 2)
+                    board.selected.grid_col = n
+                    board.selected.column = board.grid_steps[n] - board.size / 2
                     break
             for n in range(len(board.grid_steps)):
                 if event.y < board.grid_steps[n]:
                     print "row is %d" % n
-                    board.selected.row = board.grid_steps[n] - (board.size / 2)
+                    board.selected.grid_row = n
+                    board.selected.row = board.grid_steps[n] - board.size / 2
                     break            
             if board.selected.move():
                 board.selected = None
@@ -51,6 +56,7 @@ class GameBoard(tk.Frame):
         xsize = int((event.width-1) / self.columns)
         ysize = int((event.height-1) / self.rows)
         self.size = min(xsize, ysize)
+        self.grid_steps = self.calculate_grid()
         self.canvas.delete("square")
         color = self.color2
         for row in range(self.rows):
@@ -72,23 +78,25 @@ class GameBoard(tk.Frame):
 
 class Piece(object):
     def __init__(self, player, name, element, board):
-        starting_positions = {"p1_air": 5.48, "p1_fire": 2.598, "p1_water": 1.7,
-                              "p1_earth": 1.265, "p2_air": 1.265, "p2_fire": 1.7,
-                              "p2_water": 2.598, "p2_earth": 5.48}
+        starting_positions = {"p1_air": 6, "p1_fire": 11, "p1_water": 16,
+                              "p1_earth": 21, "p2_air": 21, "p2_fire": 16,
+                              "p2_water": 11, "p2_earth": 6}
         self.player = player
         self.name = name
         self.element = element
         self.board = board
         self.image = tk.PhotoImage(file="%s.gif" % element)
         self.board.canvas.create_image(0,0, image=self.image, tags=(name, "piece"), anchor="c")
-        self.row = (self.board.size * self.board.rows) / starting_positions[name]
+        self.grid_row = starting_positions[self.name]
         if player == "one":
-            self.column = int(self.board.size / 2)
+            self.grid_col = 1
             self.board.p1_pieces.append(self) 
         else:
-            self.column = (22.4 * self.board.size) + int(self.board.size / 2)
+            self.grid_col = self.board.rows
             self.board.p2_pieces.append(self)   
-        self.board.canvas.coords(self.name, self.column, self.row)
+        self.move()
+
+
 
     def move(self):
         # if self.element == "air":
@@ -99,6 +107,8 @@ class Piece(object):
         #         return True
         #     else:
         #         return False
+        self.row = self.board.grid_steps[self.grid_row] - self.board.size / 2
+        self.column = self.board.grid_steps[self.grid_col] - self.board.size / 2
         self.board.canvas.coords(self.name, self.column, self.row)
         return True
 
