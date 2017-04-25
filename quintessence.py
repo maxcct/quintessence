@@ -11,6 +11,9 @@ class GameBoard(tk.Frame):
         self.color2 = color2
         self.p1_pieces = []
         self.p2_pieces = []
+        self.selected = None
+        self.grid_steps = [(n * size) - n for n in range(rows + 1)]
+        print self.grid_steps
 
         canvas_width = columns * size
         canvas_height = rows * size
@@ -24,11 +27,23 @@ class GameBoard(tk.Frame):
         self.canvas.pack(side="top", fill="both", expand=True, padx=2, pady=2)
 
     def callback(self, event, board):
-        print event.x, event.y
-        pieces = board.p1_pieces + board.p2_pieces
-        for piece in pieces:
-            if abs(piece.column - event.x) < 20 and abs(piece.row - event.y) < 20:
-                print piece.name
+        if not board.selected:
+            pieces = board.p1_pieces + board.p2_pieces
+            for piece in pieces:
+                if abs(piece.column - event.x) < 20 and abs(piece.row - event.y) < 20:
+                    print event.x
+                    for n in range(len(board.grid_steps)):
+                        if event.x < board.grid_steps[n]:
+                            print "column is %d" % n
+                            break
+                    for n in range(len(board.grid_steps)):
+                        if event.y < board.grid_steps[n]:
+                            print "row is %d" % n
+                            break
+                    board.selected = piece
+        elif board.selected:
+            if board.selected.move(event.y, event.x):
+                board.selected = None
 
     def refresh(self, event):
         xsize = int((event.width-1) / self.columns)
@@ -71,12 +86,21 @@ class Piece(object):
         else:
             self.column = (22.4 * self.board.size) + int(self.board.size / 2)
             self.board.p2_pieces.append(self)   
-        self.move(self.row, self.column)
+        self.board.canvas.coords(self.name, self.column, self.row)
 
     def move(self, row, column):
+        if self.element == "air":
+            if abs(column - self.column) <= self.board.size * 4 and abs(row - self.row) < 20:
+                self.row = row
+                self.column = column
+                self.board.canvas.coords(self.name, column, row)
+                return True
+            else:
+                return False
         self.row = row
         self.column = column
         self.board.canvas.coords(self.name, column, row)
+        return True
 
 
 if __name__ == "__main__":
