@@ -113,7 +113,7 @@ class Air(Piece):
         self.move()
 
     def validate_move(self, column, row):
-        if abs(self.grid_col - column) <= 4 and abs(self.grid_row - row) == 0:
+        if abs(self.grid_col - column) <= 5 and abs(self.grid_row - row) == 0:
             return True
         else:
             return False
@@ -130,7 +130,11 @@ class Fire(Piece):
         self.move()
 
     def validate_move(self, column, row):
-        if abs(self.grid_col - column) <= 3 and abs(self.grid_row - row) == 0:
+        if abs(self.grid_col - column) == 1 and abs(self.grid_row - row) == 0:
+            return True
+        elif abs(self.grid_col - column) == 2 and abs(self.grid_row - row) <= 1:
+            return True
+        elif abs(self.grid_col - column) == 3 and abs(self.grid_row - row) <= 2:
             return True
         else:
             return False
@@ -147,7 +151,10 @@ class Water(Piece):
         self.move()
 
     def validate_move(self, column, row):
-        if abs(self.grid_col - column) <= 2 and abs(self.grid_row - row) == 0:
+        movement = column - self.grid_col
+        if self.player == "two":
+            movement = 0 - movement
+        if movement <= 3 and movement > 0 and abs(self.grid_row - row) <= 1:
             return True
         else:
             return False
@@ -164,7 +171,7 @@ class Earth(Piece):
         self.move()
 
     def validate_move(self, column, row):
-        if abs(self.grid_col - column) <= 1 and abs(self.grid_row - row) == 0:
+        if abs(self.grid_col - column) <= 1 and abs(self.grid_row - row) <= 1:
             return True
         else:
             return False
