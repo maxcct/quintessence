@@ -2,7 +2,7 @@ import Tkinter as tk
 
 
 class GameBoard(tk.Frame):
-    def __init__(self, parent, rows=24, columns=24, size=36, color1="antique white", color2="saddle brown"):
+    def __init__(self, parent, rows=24, columns=24, size=36, color1="antique white", color2="saddle brown", turn="one"):
 
         self.rows = rows
         self.columns = columns
@@ -13,7 +13,7 @@ class GameBoard(tk.Frame):
         self.p2_pieces = []
         self.selected = None
         self.grid_steps = self.calculate_grid()
-        print self.grid_steps
+        self.turn = turn
 
         canvas_width = columns * size
         canvas_height = rows * size
@@ -30,27 +30,33 @@ class GameBoard(tk.Frame):
         return [(n * self.size) for n in range(self.rows + 1)]
 
     def callback(self, event, board):
-        if not board.selected:
-            pieces = board.p1_pieces + board.p2_pieces
-            for piece in pieces:
-                if abs(piece.column - event.x) < 20 and abs(piece.row - event.y) < 20:
-                    board.selected = piece
-                    break
-        elif board.selected:
+        if board.turn == "one":
+            pieces = board.p1_pieces
+        else:
+            pieces = board.p2_pieces
+        for piece in pieces:
+            if abs(piece.column - event.x) < 20 and abs(piece.row - event.y) < 20:
+                board.selected = piece
+                return
+        if board.selected:
+            target_column = None
+            target_row = None
             for n in range(len(board.grid_steps)):
-                if event.x < board.grid_steps[n]:
-                    print "column is %d" % n
-                    board.selected.grid_col = n
-                    board.selected.column = board.grid_steps[n] - board.size / 2
+                if not target_column or not target_row:
+                    if not target_column and event.x < board.grid_steps[n]:
+                        print "column is %d" % n
+                        target_column = n
+                    if not target_row and event.y < board.grid_steps[n]:
+                        print "row is %d" % n
+                        target_row = n
+                else:
                     break
-            for n in range(len(board.grid_steps)):
-                if event.y < board.grid_steps[n]:
-                    print "row is %d" % n
-                    board.selected.grid_row = n
-                    board.selected.row = board.grid_steps[n] - board.size / 2
-                    break            
-            if board.selected.move():
+            if board.selected.validate_move(target_column, target_row):
+                board.selected.grid_col = target_column
+                board.selected.grid_row = target_row
+                board.selected.move()
                 board.selected = None
+                board.turn = "two" if board.turn == "one" else "one"
 
     def refresh(self, event):
         xsize = int((event.width-1) / self.columns)
@@ -106,6 +112,12 @@ class Air(Piece):
             self.board.p2_pieces.append(self)
         self.move()
 
+    def validate_move(self, column, row):
+        if abs(self.grid_col - column) <= 4 and abs(self.grid_row - row) == 0:
+            return True
+        else:
+            return False
+
 class Fire(Piece):
     def __init__(self, player, board):
         Piece.__init__(self, "fire", player, board)
@@ -116,6 +128,12 @@ class Fire(Piece):
             self.grid_row = 15
             self.board.p2_pieces.append(self)
         self.move()
+
+    def validate_move(self, column, row):
+        if abs(self.grid_col - column) <= 3 and abs(self.grid_row - row) == 0:
+            return True
+        else:
+            return False
 
 class Water(Piece):
     def __init__(self, player, board):
@@ -128,6 +146,12 @@ class Water(Piece):
             self.board.p2_pieces.append(self)
         self.move()
 
+    def validate_move(self, column, row):
+        if abs(self.grid_col - column) <= 2 and abs(self.grid_row - row) == 0:
+            return True
+        else:
+            return False
+
 class Earth(Piece):
     def __init__(self, player, board):
         Piece.__init__(self, "earth", player, board)
@@ -138,6 +162,12 @@ class Earth(Piece):
             self.grid_row = 5
             self.board.p2_pieces.append(self)
         self.move()
+
+    def validate_move(self, column, row):
+        if abs(self.grid_col - column) <= 1 and abs(self.grid_row - row) == 0:
+            return True
+        else:
+            return False
 
 
 if __name__ == "__main__":
