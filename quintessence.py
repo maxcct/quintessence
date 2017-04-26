@@ -77,40 +77,67 @@ class GameBoard(tk.Frame):
 
 
 class Piece(object):
-    def __init__(self, player, name, element, board):
-        starting_positions = {"p1_air": 6, "p1_fire": 11, "p1_water": 16,
-                              "p1_earth": 21, "p2_air": 21, "p2_fire": 16,
-                              "p2_water": 11, "p2_earth": 6}
+    def __init__(self, element, player, board):
         self.player = player
-        self.name = name
-        self.element = element
         self.board = board
         self.image = tk.PhotoImage(file="%s.gif" % element)
-        self.board.canvas.create_image(0,0, image=self.image, tags=(name, "piece"), anchor="c")
-        self.grid_row = starting_positions[self.name]
+        self.name = element + "_" + player
+        self.board.canvas.create_image(0,0, image=self.image, tags=(self.name, "piece"), anchor="c")
         if player == "one":
             self.grid_col = 1
-            self.board.p1_pieces.append(self) 
         else:
             self.grid_col = self.board.rows
-            self.board.p2_pieces.append(self)   
-        self.move()
-
-
 
     def move(self):
-        # if self.element == "air":
-        #     if abs(column - self.column) <= self.board.size * 4 and abs(row - self.row) < 20:
-        #         self.row = row
-        #         self.column = column
-        #         self.board.canvas.coords(self.name, column, row)
-        #         return True
-        #     else:
-        #         return False
         self.row = self.board.grid_steps[self.grid_row] - self.board.size / 2
         self.column = self.board.grid_steps[self.grid_col] - self.board.size / 2
         self.board.canvas.coords(self.name, self.column, self.row)
         return True
+
+
+class Air(Piece):
+    def __init__(self, player, board):
+        Piece.__init__(self, "air", player, board)
+        if player == "one":
+            self.grid_row = 5
+            self.board.p1_pieces.append(self) 
+        else:
+            self.grid_row = 20
+            self.board.p2_pieces.append(self)
+        self.move()
+
+class Fire(Piece):
+    def __init__(self, player, board):
+        Piece.__init__(self, "fire", player, board)
+        if player == "one":
+            self.grid_row = 10
+            self.board.p1_pieces.append(self) 
+        else:
+            self.grid_row = 15
+            self.board.p2_pieces.append(self)
+        self.move()
+
+class Water(Piece):
+    def __init__(self, player, board):
+        Piece.__init__(self, "water", player, board)
+        if player == "one":
+            self.grid_row = 15
+            self.board.p1_pieces.append(self) 
+        else:
+            self.grid_row = 10
+            self.board.p2_pieces.append(self)
+        self.move()
+
+class Earth(Piece):
+    def __init__(self, player, board):
+        Piece.__init__(self, "earth", player, board)
+        if player == "one":
+            self.grid_row = 20
+            self.board.p1_pieces.append(self) 
+        else:
+            self.grid_row = 5
+            self.board.p2_pieces.append(self)
+        self.move()
 
 
 if __name__ == "__main__":
@@ -118,15 +145,15 @@ if __name__ == "__main__":
     board = GameBoard(root)
     board.pack(side="top", fill="both", expand="true", padx=4, pady=4)
 
-    p1_air = Piece("one", "p1_air", "air", board)
-    p1_fire = Piece("one", "p1_fire", "fire", board)
-    p1_water = Piece("one", "p1_water", "water", board)
-    p1_earth = Piece("one", "p1_earth", "earth", board)
+    p1_air = Air("one", board)
+    p1_fire = Fire("one", board)
+    p1_water = Water("one", board)
+    p1_earth = Earth("one", board)
 
-    p2_air = Piece("two", "p2_air", "air", board)
-    p2_fire = Piece("two", "p2_fire", "fire", board)
-    p2_water = Piece("two", "p2_water", "water", board)
-    p2_earth = Piece("two", "p2_earth", "earth", board)
+    p2_air = Air("two", board)
+    p2_fire = Fire("two", board)
+    p2_water = Water("two", board)
+    p2_earth = Earth("two", board)
 
     board.canvas.bind("<Button-1>", lambda event, arg=board: board.callback(event, arg))
 
