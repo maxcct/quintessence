@@ -23,13 +23,12 @@ class GameBoard(tk.Frame):
                                 width=canvas_width, height=canvas_height, background="bisque")
 
         self.canvas.bind("<Configure>", self.refresh)
-
         self.canvas.pack(side="top", fill="both", expand=True, padx=2, pady=2)
 
     def calculate_grid(self):
         return [(n * self.size) for n in range(self.rows + 1)]
 
-    def callback(self, event, board):
+    def click(self, event, board):
         if board.turn == "one":
             pieces = board.p1_pieces
         else:
@@ -55,8 +54,36 @@ class GameBoard(tk.Frame):
                 board.selected.grid_col = target_column
                 board.selected.grid_row = target_row
                 board.selected.move()
-                board.selected = None
-                board.turn = "two" if board.turn == "one" else "one"
+                self.end_turn()
+
+    def up(self, event, board):
+        if board.selected:
+            if board.selected.element == "air":
+                board.selected.direction = "up"
+                self.end_turn()
+
+    def right(self, event, board):
+        if board.selected:
+            if board.selected.element == "air":
+                board.selected.direction = "right"
+                self.end_turn()
+
+    def down(self, event, board):
+        if board.selected:
+            if board.selected.element == "air":
+                board.selected.direction = "down"
+                self.end_turn()
+
+    def left(self, event, board):
+        if board.selected:
+            if board.selected.element == "air":
+                board.selected.direction = "left"
+                self.end_turn()
+
+
+    def end_turn(self):
+            board.selected = None
+            board.turn = "two" if board.turn == "one" else "one"        
 
     def refresh(self, event):
         xsize = int((event.width-1) / self.columns)
@@ -86,6 +113,7 @@ class Piece(object):
     def __init__(self, element, player, board):
         self.player = player
         self.board = board
+        self.element = element
         self.image = tk.PhotoImage(file="%s.gif" % element)
         self.name = element + "_" + player
         self.board.canvas.create_image(0,0, image=self.image, tags=(self.name, "piece"), anchor="c")
@@ -105,16 +133,22 @@ class Air(Piece):
     def __init__(self, player, board):
         Piece.__init__(self, "air", player, board)
         if player == "one":
+            self.direction = "right"
             self.grid_row = 5
             self.board.p1_pieces.append(self) 
         else:
+            self.direction = "left"
             self.grid_row = 20
             self.board.p2_pieces.append(self)
         self.move()
 
     def validate_move(self, column, row):
-        if abs(self.grid_col - column) <= 5 and abs(self.grid_row - row) == 0:
-            return True
+        if self.direction == "right" or self.direction == "left":
+            if abs(self.grid_col - column) <= 5 and abs(self.grid_row - row) == 0:
+                return True
+        elif self.direction == "up" or self.direction == "down":
+            if abs(self.grid_row - row) <= 5 and abs(self.grid_col - column) == 0:
+                return True
         else:
             return False
 
@@ -192,6 +226,11 @@ if __name__ == "__main__":
     p2_water = Water("two", board)
     p2_earth = Earth("two", board)
 
-    board.canvas.bind("<Button-1>", lambda event, arg=board: board.callback(event, arg))
+    board.canvas.bind("<Button-1>", lambda event, arg=board: board.click(event, arg))
+    board.canvas.bind("<Up>", lambda event, arg=board: board.up(event, arg))
+    board.canvas.bind("<Right>", lambda event, arg=board: board.right(event, arg))
+    board.canvas.bind("<Down>", lambda event, arg=board: board.down(event, arg))
+    board.canvas.bind("<Left>", lambda event, arg=board: board.left(event, arg))
+    board.canvas.focus_set()
 
     root.mainloop()
