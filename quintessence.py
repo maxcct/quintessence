@@ -43,10 +43,10 @@ class GameBoard(tk.Frame):
             for n in range(len(board.grid_steps)):
                 if not target_column or not target_row:
                     if not target_column and event.x < board.grid_steps[n]:
-                        print "column is %d" % n
+                        # print "column is %d" % n
                         target_column = n
                     if not target_row and event.y < board.grid_steps[n]:
-                        print "row is %d" % n
+                        # print "row is %d" % n
                         target_row = n
                 else:
                     break
@@ -60,26 +60,37 @@ class GameBoard(tk.Frame):
         if board.selected:
             if board.selected.element == "air":
                 board.selected.direction = "up"
-                self.end_turn()
+                board.end_turn()
+            elif board.selected.element == "water":
+                board.selected.direction = "diagonal_up"
+                board.end_turn()
 
     def right(self, event, board):
         if board.selected:
             if board.selected.element == "air":
                 board.selected.direction = "right"
-                self.end_turn()
+                board.end_turn()
+            elif board.selected.element == "water" and board.selected.player == "one":
+                board.selected.direction = "lateral"
+                board.end_turn()
 
     def down(self, event, board):
         if board.selected:
             if board.selected.element == "air":
                 board.selected.direction = "down"
-                self.end_turn()
+                board.end_turn()
+            elif board.selected.element == "water":
+                board.selected.direction = "diagonal_down"
+                board.end_turn()
 
     def left(self, event, board):
         if board.selected:
             if board.selected.element == "air":
                 board.selected.direction = "left"
-                self.end_turn()
-
+                board.end_turn()
+            elif board.selected.element == "water" and board.selected.player == "two":
+                board.selected.direction = "lateral"
+                board.end_turn()
 
     def end_turn(self):
             board.selected = None
@@ -144,10 +155,16 @@ class Air(Piece):
 
     def validate_move(self, column, row):
         if self.direction == "right" or self.direction == "left":
-            if abs(self.grid_col - column) <= 5 and abs(self.grid_row - row) == 0:
+            movement = column - self.grid_col
+            if self.direction == "left":
+                movement = 0 - movement
+            if movement - column <= 5 and movement > 0 and abs(self.grid_row - row) == 0:
                 return True
         elif self.direction == "up" or self.direction == "down":
-            if abs(self.grid_row - row) <= 5 and abs(self.grid_col - column) == 0:
+            movement = row - self.grid_row
+            if self.direction == "up":
+                movement = 0 - movement
+            if movement - row <= 5 and movement > 0 and abs(self.grid_col - column) == 0:
                 return True
         else:
             return False
@@ -164,7 +181,7 @@ class Fire(Piece):
         self.move()
 
     def validate_move(self, column, row):
-        if abs(self.grid_col - column) == 1 and abs(self.grid_row - row) == 0:
+        if abs(self.grid_col - column) == 1 and self.grid_row - row == 0:
             return True
         elif abs(self.grid_col - column) == 2 and abs(self.grid_row - row) <= 1:
             return True
@@ -176,6 +193,7 @@ class Fire(Piece):
 class Water(Piece):
     def __init__(self, player, board):
         Piece.__init__(self, "water", player, board)
+        self.direction = "lateral"
         if player == "one":
             self.grid_row = 15
             self.board.p1_pieces.append(self) 
@@ -185,11 +203,21 @@ class Water(Piece):
         self.move()
 
     def validate_move(self, column, row):
-        movement = column - self.grid_col
+        row_move = row - self.grid_row
+        col_move = column - self.grid_col
         if self.player == "two":
-            movement = 0 - movement
-        if movement <= 3 and movement > 0 and abs(self.grid_row - row) <= 1:
-            return True
+            col_move = 0 - col_move
+        if self.direction == "lateral":
+            if col_move <= 3 and col_move > 0 and abs(row_move) <= 1:
+                return True
+        elif self.direction == "diagonal_up" or self.direction == "diagonal_down":
+            if self.direction == "diagonal_up":
+                row_move = 0 - row_move
+            if col_move >= 0 and col_move <= 3 and row_move >= 0 and row_move <= 3:
+                if row_move == 1 or row_move == 2 and col_move == 0:
+                    return True
+                elif (col_move <= 2 and row_move == 0) or (col_move <= 3 and row_move > 0):
+                    return True
         else:
             return False
 
@@ -205,7 +233,7 @@ class Earth(Piece):
         self.move()
 
     def validate_move(self, column, row):
-        if abs(self.grid_col - column) <= 1 and abs(self.grid_row - row) <= 1:
+        if abs(self.grid_col - column) <= 2 and abs(self.grid_row - row) <= 2:
             return True
         else:
             return False
