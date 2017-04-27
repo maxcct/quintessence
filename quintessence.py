@@ -11,6 +11,7 @@ class GameBoard(tk.Frame):
         self.color2 = color2
         self.p1_pieces = []
         self.p2_pieces = []
+        self.positions = [[None for n in range(columns)] for n in range(rows)]
         self.selected = None
         self.grid_steps = self.calculate_grid()
         self.turn = turn
@@ -27,6 +28,11 @@ class GameBoard(tk.Frame):
 
     def calculate_grid(self):
         return [(n * self.size) for n in range(self.rows + 1)]
+
+    def set_positions(self):
+        pieces = self.p1_pieces.extend(p2_pieces)
+        for piece in pieces:
+            self.positions[piece.grid_col][piece.grid_row] = piece
 
     def click(self, event, board):
         if board.turn == "one":
@@ -137,8 +143,7 @@ class Piece(object):
         self.row = self.board.grid_steps[self.grid_row] - self.board.size / 2
         self.column = self.board.grid_steps[self.grid_col] - self.board.size / 2
         self.board.canvas.coords(self.name, self.column, self.row)
-        return True
-
+        self.board.positions[self.grid_col][self.grid_row] = self
 
 class Air(Piece):
     def __init__(self, player, board):
@@ -253,6 +258,8 @@ if __name__ == "__main__":
     p2_fire = Fire("two", board)
     p2_water = Water("two", board)
     p2_earth = Earth("two", board)
+
+    board.set_positions()
 
     board.canvas.bind("<Button-1>", lambda event, arg=board: board.click(event, arg))
     board.canvas.bind("<Up>", lambda event, arg=board: board.up(event, arg))
