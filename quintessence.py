@@ -168,14 +168,17 @@ class Piece(object):
         target_piece = self.board.positions[row-1][column-1]
         if target_piece:
             if target_piece.element == self.prey:
-                target_piece.remove_last_position()
-                target_piece.grid_row = target_piece.start[0]
-                target_piece.grid_col = target_piece.start[1]
-                target_piece.move()
-                return True
+                return self.destroy(target_piece)
             else:
                 return False
         return True
+
+    def destroy(self, target):
+        target.remove_last_position()
+        self.board.pieces.remove(target)
+        self.board.canvas.delete(target)
+        del target
+        return True         
 
 
 class Air(Piece):
@@ -185,7 +188,6 @@ class Air(Piece):
             self.direction = "right"
         else:
             self.direction = "left"
-        self.start = (self.grid_row, self.grid_col)
         self.prey = ("water", "fire")
         self.board.pieces.append(self)
         self.move()
@@ -209,11 +211,7 @@ class Air(Piece):
         target_piece = self.board.positions[row-1][column-1]
         if target_piece:
             if random.random() > 0.5:
-                target_piece.remove_last_position()
-                target_piece.grid_row = target_piece.start[0]
-                target_piece.grid_col = target_piece.start[1]
-                target_piece.move()
-                return True
+                return self.destroy(target_piece)
             else:
                 self.board.failed = tk.Label(root, text="The wind did not blow strongly enough")
                 self.board.failed.pack()
@@ -225,7 +223,6 @@ class Air(Piece):
 class Fire(Piece):
     def __init__(self, player, board, row):
         Piece.__init__(self, "fire", player, board, row)
-        self.start = (self.grid_row, self.grid_col)
         self.prey = "earth"
         self.board.pieces.append(self)
         self.move()
@@ -244,7 +241,6 @@ class Water(Piece):
     def __init__(self, player, board, row):
         Piece.__init__(self, "water", player, board, row)
         self.direction = "lateral"
-        self.start = (self.grid_row, self.grid_col)
         self.prey = "fire"
         self.board.pieces.append(self)
         self.move()
@@ -272,7 +268,6 @@ class Water(Piece):
 class Earth(Piece):
     def __init__(self, player, board, row):
         Piece.__init__(self, "earth", player, board, row)
-        self.start = (self.grid_row, self.grid_col)
         self.prey = "air"
         self.board.pieces.append(self)
         self.move()
