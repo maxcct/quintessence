@@ -16,6 +16,7 @@ class GameBoard(tk.Frame):
         self.selected = None
         self.grid_steps = self.calculate_grid()
         self.turn = turn
+        self.turn_status = tk.Label(root, text="It is player %s's turn" % self.turn)
         self.failed = None
 
         canvas_width = columns * size
@@ -27,6 +28,7 @@ class GameBoard(tk.Frame):
 
         self.canvas.bind("<Configure>", self.refresh)
         self.canvas.pack(side="top", fill="both", expand=True, padx=2, pady=2)
+        self.turn_status.pack()
 
     def calculate_grid(self):
         return [(n * self.size) for n in range(self.rows+1)]
@@ -36,35 +38,39 @@ class GameBoard(tk.Frame):
         for piece in pieces:
             self.positions[piece.grid_row-1][piece.grid_col-1] = piece
 
+    def convert_coords(self, event):
+        target_column = None
+        target_row = None
+        for n in range(len(board.grid_steps)):
+            if not target_column or not target_row:
+                if not target_column and event.x < board.grid_steps[n]:
+                    target_column = n
+                if not target_row and event.y < board.grid_steps[n]:
+                    target_row = n
+            else:
+                break
+        return (target_column, target_row)        
+
     def click(self, event, board):
         if board.failed:
             board.failed.pack_forget()
-        if board.turn == "one":
-            pieces = board.p1_pieces
-        else:
-            pieces = board.p2_pieces
-        for piece in pieces:
-            if abs(piece.column - event.x) < 20 and abs(piece.row - event.y) < 20:
-                board.selected = piece
-                return
-        if board.selected:
-            target_column = None
-            target_row = None
-            for n in range(len(board.grid_steps)):
-                if not target_column or not target_row:
-                    if not target_column and event.x < board.grid_steps[n]:
-                        target_column = n
-                    if not target_row and event.y < board.grid_steps[n]:
-                        target_row = n
-                else:
-                    break
-            target_piece = board.positions[target_row-1][target_column-1]
+        target = board.convert_coords(event)
+        if not target[0] or not target[1]:
+            return
+        target_column = target[0]
+        target_row = target[1]
+        target_piece = board.positions[target_row-1][target_column-1]
+        if target_piece and not board.selected and board.turn == target_piece.player:
+            board.selected = target_piece
+            return
+        elif board.selected:
             if target_piece:
                 if target_piece.element == board.selected.element:
                     return
                 elif target_piece.grid_col == 1 or target_piece.grid_col == board.rows:
                     return
             if board.selected.validate_move(target_column, target_row):
+                board.selected.remove_last_position()
                 board.selected.grid_col = target_column
                 board.selected.grid_row = target_row
                 board.selected.move()
@@ -109,6 +115,8 @@ class GameBoard(tk.Frame):
     def end_turn(self):
         self.selected = None
         self.turn = "two" if self.turn == "one" else "one"
+        self.turn_status["text"] = "It is player %s's turn" % self.turn
+        self.turn_status.pack()
 
     def refresh(self, event):
         xsize = int((event.width-1) / self.columns)
@@ -147,6 +155,9 @@ class Piece(object):
         else:
             self.grid_col = self.board.rows
 
+    def remove_last_position(self):
+        self.board.positions[self.grid_row-1][self.grid_col-1] = None
+
     def move(self):
         self.row = self.board.grid_steps[self.grid_row] - self.board.size / 2
         self.column = self.board.grid_steps[self.grid_col] - self.board.size / 2
@@ -168,22 +179,18 @@ class Air(Piece):
         self.move()
 
     def validate_move(self, column, row):
-        attack_result = self.attack(column, row)
-        if attack_result == "Failed":
-            self.board.end_turn()
-            return False
         if self.direction == "right" or self.direction == "left":
             movement = column - self.grid_col
             if self.direction == "left":
                 movement = 0 - movement
-            if movement <= 5 and movement > 0 and abs(self.grid_row - row) == 0:
-                return True
+            if movement <= 24 and movement > 0 and abs(self.grid_row - row) == 0:
+                return self.attack(column, row)
         elif self.direction == "up" or self.direction == "down":
             movement = row - self.grid_row
             if self.direction == "up":
                 movement = 0 - movement
-            if movement <= 5 and movement > 0 and abs(self.grid_col - column) == 0:
-                return True
+            if movement <= 24 and movement > 0 and abs(self.grid_col - column) == 0:
+                return self.attack(column, row)
         return False
 
     def attack(self, column, row):
@@ -191,13 +198,19 @@ class Air(Piece):
         if target_piece:
             if target_piece.element != "earth":
                 if random.random() > 0.5:
+                    target_piece.remove_last_position()
                     target_piece.grid_row = target_piece.start[0]
                     target_piece.grid_col = target_piece.start[1]
                     target_piece.move()
+                    return True
                 else:
                     self.board.failed = tk.Label(root, text="The wind did not blow strongly enough")
                     self.board.failed.pack()
-                    return "Failed"
+                    self.board.end_turn()
+                    return False
+            else:
+                return False
+        return True
 
 
 class Fire(Piece):
