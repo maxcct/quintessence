@@ -189,14 +189,15 @@ class Air(Piece):
     def attack(self, column, row):
         target_piece = self.board.positions[row-1][column-1]
         if target_piece:
-            if random.random() > 0.5:
-                target_piece.grid_row = target_piece.start[0]
-                target_piece.grid_col = target_piece.start[1]
-                target_piece.move()
-            else:
-                self.board.failed = tk.Label(root, text="The wind did not blow strongly enough")
-                self.board.failed.pack()
-                return "Failed"
+            if target_piece.element != "earth":
+                if random.random() > 0.5:
+                    target_piece.grid_row = target_piece.start[0]
+                    target_piece.grid_col = target_piece.start[1]
+                    target_piece.move()
+                else:
+                    self.board.failed = tk.Label(root, text="The wind did not blow strongly enough")
+                    self.board.failed.pack()
+                    return "Failed"
 
 
 class Fire(Piece):
