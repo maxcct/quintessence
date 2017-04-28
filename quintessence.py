@@ -1,4 +1,5 @@
 import Tkinter as tk
+import random
 
 
 class GameBoard(tk.Frame):
@@ -15,6 +16,7 @@ class GameBoard(tk.Frame):
         self.selected = None
         self.grid_steps = self.calculate_grid()
         self.turn = turn
+        self.failed = None
 
         canvas_width = columns * size
         canvas_height = rows * size
@@ -27,14 +29,16 @@ class GameBoard(tk.Frame):
         self.canvas.pack(side="top", fill="both", expand=True, padx=2, pady=2)
 
     def calculate_grid(self):
-        return [(n * self.size) for n in range(self.rows + 1)]
+        return [(n * self.size) for n in range(self.rows+1)]
 
     def set_positions(self):
-        pieces = self.p1_pieces.extend(p2_pieces)
+        pieces = self.p1_pieces + self.p2_pieces
         for piece in pieces:
-            self.positions[piece.grid_col][piece.grid_row] = piece
+            self.positions[piece.grid_row-1][piece.grid_col-1] = piece
 
     def click(self, event, board):
+        if board.failed:
+            board.failed.pack_forget()
         if board.turn == "one":
             pieces = board.p1_pieces
         else:
@@ -49,18 +53,22 @@ class GameBoard(tk.Frame):
             for n in range(len(board.grid_steps)):
                 if not target_column or not target_row:
                     if not target_column and event.x < board.grid_steps[n]:
-                        # print "column is %d" % n
                         target_column = n
                     if not target_row and event.y < board.grid_steps[n]:
-                        # print "row is %d" % n
                         target_row = n
                 else:
                     break
+            target_piece = board.positions[target_row-1][target_column-1]
+            if target_piece:
+                if target_piece.element == board.selected.element:
+                    return
+                elif target_piece.grid_col == 1 or target_piece.grid_col == board.rows:
+                    return
             if board.selected.validate_move(target_column, target_row):
                 board.selected.grid_col = target_column
                 board.selected.grid_row = target_row
                 board.selected.move()
-                self.end_turn()
+                board.end_turn()
 
     def up(self, event, board):
         if board.selected:
@@ -99,8 +107,8 @@ class GameBoard(tk.Frame):
                 board.end_turn()
 
     def end_turn(self):
-            board.selected = None
-            board.turn = "two" if board.turn == "one" else "one"        
+        self.selected = None
+        self.turn = "two" if self.turn == "one" else "one"
 
     def refresh(self, event):
         xsize = int((event.width-1) / self.columns)
@@ -143,7 +151,7 @@ class Piece(object):
         self.row = self.board.grid_steps[self.grid_row] - self.board.size / 2
         self.column = self.board.grid_steps[self.grid_col] - self.board.size / 2
         self.board.canvas.coords(self.name, self.column, self.row)
-        self.board.positions[self.grid_col][self.grid_row] = self
+        self.board.positions[self.grid_row-1][self.grid_col-1] = self
 
 class Air(Piece):
     def __init__(self, player, board):
@@ -156,23 +164,40 @@ class Air(Piece):
             self.direction = "left"
             self.grid_row = 20
             self.board.p2_pieces.append(self)
+        self.start = (self.grid_row, self.grid_col)
         self.move()
 
     def validate_move(self, column, row):
+        attack_result = self.attack(column, row)
+        if attack_result == "Failed":
+            self.board.end_turn()
+            return False
         if self.direction == "right" or self.direction == "left":
             movement = column - self.grid_col
             if self.direction == "left":
                 movement = 0 - movement
-            if movement - column <= 5 and movement > 0 and abs(self.grid_row - row) == 0:
+            if movement <= 24 and movement > 0 and abs(self.grid_row - row) == 0:
                 return True
         elif self.direction == "up" or self.direction == "down":
             movement = row - self.grid_row
             if self.direction == "up":
                 movement = 0 - movement
-            if movement - row <= 5 and movement > 0 and abs(self.grid_col - column) == 0:
+            if movement - row <= 24 and movement > 0 and abs(self.grid_col - column) == 0:
                 return True
-        else:
-            return False
+        return False
+
+    def attack(self, column, row):
+        target_piece = self.board.positions[row-1][column-1]
+        if target_piece:
+            if random.random() > 0.5:
+                target_piece.grid_row = target_piece.start[0]
+                target_piece.grid_col = target_piece.start[1]
+                target_piece.move()
+            else:
+                self.board.failed = tk.Label(root, text="The wind did not blow strongly enough")
+                self.board.failed.pack()
+                return "Failed"
+
 
 class Fire(Piece):
     def __init__(self, player, board):
@@ -183,6 +208,7 @@ class Fire(Piece):
         else:
             self.grid_row = 15
             self.board.p2_pieces.append(self)
+        self.start = (self.grid_row, self.grid_col)
         self.move()
 
     def validate_move(self, column, row):
@@ -195,6 +221,7 @@ class Fire(Piece):
         else:
             return False
 
+
 class Water(Piece):
     def __init__(self, player, board):
         Piece.__init__(self, "water", player, board)
@@ -205,6 +232,7 @@ class Water(Piece):
         else:
             self.grid_row = 10
             self.board.p2_pieces.append(self)
+        self.start = (self.grid_row, self.grid_col)
         self.move()
 
     def validate_move(self, column, row):
@@ -226,6 +254,7 @@ class Water(Piece):
         else:
             return False
 
+
 class Earth(Piece):
     def __init__(self, player, board):
         Piece.__init__(self, "earth", player, board)
@@ -235,6 +264,7 @@ class Earth(Piece):
         else:
             self.grid_row = 5
             self.board.p2_pieces.append(self)
+        self.start = (self.grid_row, self.grid_col)
         self.move()
 
     def validate_move(self, column, row):
