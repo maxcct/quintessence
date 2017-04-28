@@ -10,8 +10,7 @@ class GameBoard(tk.Frame):
         self.size = size
         self.color1 = color1
         self.color2 = color2
-        self.p1_pieces = []
-        self.p2_pieces = []
+        self.pieces = []
         self.positions = [[None for n in range(columns)] for n in range(rows)]
         self.selected = None
         self.grid_steps = self.calculate_grid()
@@ -34,8 +33,7 @@ class GameBoard(tk.Frame):
         return [(n * self.size) for n in range(self.rows+1)]
 
     def set_positions(self):
-        pieces = self.p1_pieces + self.p2_pieces
-        for piece in pieces:
+        for piece in self.pieces:
             self.positions[piece.grid_row-1][piece.grid_col-1] = piece
 
     def convert_coords(self, event):
@@ -137,22 +135,21 @@ class GameBoard(tk.Frame):
                 y2 = y1 + self.size
                 self.canvas.create_rectangle(x1, y1, x2, y2, outline="black", fill=color, tags="square")
                 color = self.color1 if color == self.color2 else self.color2
-        for piece in self.p2_pieces:
-            piece.move()
-        for piece in self.p1_pieces:
+        for piece in self.pieces:
             piece.move()
         self.canvas.tag_raise("piece")
         self.canvas.tag_lower("square")
 
 
 class Piece(object):
-    def __init__(self, element, player, board):
+    def __init__(self, element, player, board, row):
         self.player = player
         self.board = board
         self.element = element
         self.image = tk.PhotoImage(file="%s.gif" % element)
-        self.name = element + "_" + player
+        self.name = str(row) + "_" + element + "_" + player
         self.board.canvas.create_image(0,0, image=self.image, tags=(self.name, "piece"), anchor="c")
+        self.grid_row = row
         if player == "one":
             self.grid_col = 1
         else:
@@ -182,18 +179,17 @@ class Piece(object):
 
 
 class Air(Piece):
-    def __init__(self, player, board):
-        Piece.__init__(self, "air", player, board)
+    def __init__(self, player, board, row):
+        Piece.__init__(self, "air", player, board, row)
+        print self.grid_row
+        print self.grid_col
         if player == "one":
             self.direction = "right"
-            self.grid_row = 5
-            self.board.p1_pieces.append(self) 
         else:
             self.direction = "left"
-            self.grid_row = 20
-            self.board.p2_pieces.append(self)
         self.start = (self.grid_row, self.grid_col)
         self.prey = ("water", "fire")
+        self.board.pieces.append(self)
         self.move()
 
     def validate_move(self, column, row):
@@ -229,16 +225,11 @@ class Air(Piece):
 
 
 class Fire(Piece):
-    def __init__(self, player, board):
-        Piece.__init__(self, "fire", player, board)
-        if player == "one":
-            self.grid_row = 10
-            self.board.p1_pieces.append(self) 
-        else:
-            self.grid_row = 15
-            self.board.p2_pieces.append(self)
+    def __init__(self, player, board, row):
+        Piece.__init__(self, "fire", player, board, row)
         self.start = (self.grid_row, self.grid_col)
         self.prey = "earth"
+        self.board.pieces.append(self)
         self.move()
 
     def validate_move(self, column, row):
@@ -252,17 +243,12 @@ class Fire(Piece):
 
 
 class Water(Piece):
-    def __init__(self, player, board):
-        Piece.__init__(self, "water", player, board)
+    def __init__(self, player, board, row):
+        Piece.__init__(self, "water", player, board, row)
         self.direction = "lateral"
-        if player == "one":
-            self.grid_row = 15
-            self.board.p1_pieces.append(self) 
-        else:
-            self.grid_row = 10
-            self.board.p2_pieces.append(self)
         self.start = (self.grid_row, self.grid_col)
         self.prey = "fire"
+        self.board.pieces.append(self)
         self.move()
 
     def validate_move(self, column, row):
@@ -286,16 +272,11 @@ class Water(Piece):
 
 
 class Earth(Piece):
-    def __init__(self, player, board):
-        Piece.__init__(self, "earth", player, board)
-        if player == "one":
-            self.grid_row = 20
-            self.board.p1_pieces.append(self) 
-        else:
-            self.grid_row = 5
-            self.board.p2_pieces.append(self)
+    def __init__(self, player, board, row):
+        Piece.__init__(self, "earth", player, board, row)
         self.start = (self.grid_row, self.grid_col)
         self.prey = "air"
+        self.board.pieces.append(self)
         self.move()
 
     def validate_move(self, column, row):
@@ -310,15 +291,19 @@ if __name__ == "__main__":
     board = GameBoard(root)
     board.pack(side="top", fill="both", expand="true", padx=4, pady=4)
 
-    p1_air = Air("one", board)
-    p1_fire = Fire("one", board)
-    p1_water = Water("one", board)
-    p1_earth = Earth("one", board)
-
-    p2_air = Air("two", board)
-    p2_fire = Fire("two", board)
-    p2_water = Water("two", board)
-    p2_earth = Earth("two", board)
+    for n in range(1, board.rows+1):
+        if n == 0 or (n-1) % 4 == 0:
+            Air("one", board, n)
+            Earth("two", board, n)
+        elif n % 4 == 0:
+            Air("two", board, n)
+            Earth("one", board, n)
+        elif (n-2) % 4 == 0:
+            Fire("one", board, n)
+            Water("two", board, n)
+        elif (n-3) % 4 == 0:
+            Fire("two", board, n)
+            Water("one", board, n)
 
     board.set_positions()
 
