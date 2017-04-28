@@ -11,13 +11,16 @@ class GameBoard(tk.Frame):
         self.color1 = color1
         self.color2 = color2
         self.pieces = []
+        self.player_one_pieces = {"air": 0, "fire": 0, "water": 0, "earth": 0}
+        self.player_two_pieces = {"air": 0, "fire": 0, "water": 0, "earth": 0}
         self.positions = [[None for n in range(columns)] for n in range(rows)]
         self.selected = None
         self.grid_steps = self.calculate_grid()
         self.turn = turn
         self.turn_status = tk.Label(root, text="It is player %s's turn" % self.turn)
-        self.failed = None
+        # self.failed = None
         self.victory = None
+        self.gameover_status = False
 
         canvas_width = columns * size
         canvas_height = rows * size
@@ -51,8 +54,8 @@ class GameBoard(tk.Frame):
         return (target_column, target_row)        
 
     def click(self, event, board):
-        if board.failed:
-            board.failed.pack_forget()
+        # if board.failed:
+        #     board.failed.pack_forget()
         target = board.convert_coords(event)
         if not target[0] or not target[1]:
             return
@@ -64,10 +67,10 @@ class GameBoard(tk.Frame):
             return
         elif board.selected:
             if target_piece:
-                if board.selected.element == "air":
-                    if target_piece.element not in board.selected.prey:
-                        return
-                elif target_piece.element != board.selected.prey:
+                # if board.selected.element == "air":
+                #     if target_piece.element not in board.selected.prey:
+                #         return
+                if target_piece.element != board.selected.prey:
                     return
                 elif target_piece.grid_col == 1 or target_piece.grid_col == board.rows:
                     return
@@ -122,6 +125,7 @@ class GameBoard(tk.Frame):
         self.turn_status.pack()
 
     def gameover(self, victor):
+        self.gameover_status = True
         self.turn_status.pack_forget()
         self.victory = tk.Label(root, text="Player %s wins!" % victor.player)
         self.victory.pack()
@@ -159,8 +163,10 @@ class Piece(object):
         self.grid_row = row
         if player == "one":
             self.grid_col = 1
+            self.board.player_one_pieces[element] += 1
         else:
             self.grid_col = self.board.rows
+            self.board.player_two_pieces[element] += 1
 
     def remove_last_position(self):
         self.board.positions[self.grid_row-1][self.grid_col-1] = None
@@ -170,7 +176,9 @@ class Piece(object):
         self.column = self.board.grid_steps[self.grid_col] - self.board.size / 2
         self.board.canvas.coords(self.name, self.column, self.row)
         self.board.positions[self.grid_row-1][self.grid_col-1] = self
-        if self.check_for_victory():
+        if self.board.gameover_status:
+            return False
+        elif self.check_for_victory():
             self.board.gameover(self)
             return False
         return True
@@ -188,6 +196,14 @@ class Piece(object):
         target.remove_last_position()
         self.board.pieces.remove(target)
         self.board.canvas.delete(target)
+        if target.player == "one":
+            self.board.player_one_pieces[target.element] -= 1
+            if self.board.player_one_pieces[target.element] == 0:
+                self.board.gameover(self)
+        elif target.player == "two":
+            self.board.player_two_pieces[target.element] -= 1
+            if self.board.player_two_pieces[target.element] == 0:
+                self.board.gameover(self)
         del target
         return True         
 
@@ -216,7 +232,7 @@ class Air(Piece):
             self.direction = "right"
         else:
             self.direction = "left"
-        self.prey = ("water", "fire")
+        self.prey = "water"
         self.board.pieces.append(self)
         self.move()
 
@@ -235,17 +251,17 @@ class Air(Piece):
                 return self.attack(column, row)
         return False
 
-    def attack(self, column, row):
-        target_piece = self.board.positions[row-1][column-1]
-        if target_piece:
-            if random.random() > 0.5:
-                return self.destroy(target_piece)
-            else:
-                self.board.failed = tk.Label(root, text="The wind did not blow strongly enough")
-                self.board.failed.pack()
-                self.board.end_turn()
-                return False
-        return True
+    # def attack(self, column, row):
+    #     target_piece = self.board.positions[row-1][column-1]
+    #     if target_piece:
+    #         if random.random() > 0.5:
+    #             return self.destroy(target_piece)
+    #         else:
+    #             self.board.failed = tk.Label(root, text="The wind did not blow strongly enough")
+    #             self.board.failed.pack()
+    #             self.board.end_turn()
+    #             return False
+    #     return True
 
 
 class Fire(Piece):
