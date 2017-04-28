@@ -183,13 +183,13 @@ class Air(Piece):
             movement = column - self.grid_col
             if self.direction == "left":
                 movement = 0 - movement
-            if movement <= 24 and movement > 0 and abs(self.grid_row - row) == 0:
+            if movement <= 5 and movement > 0 and abs(self.grid_row - row) == 0:
                 return self.attack(column, row)
         elif self.direction == "up" or self.direction == "down":
             movement = row - self.grid_row
             if self.direction == "up":
                 movement = 0 - movement
-            if movement <= 24 and movement > 0 and abs(self.grid_col - column) == 0:
+            if movement <= 5 and movement > 0 and abs(self.grid_col - column) == 0:
                 return self.attack(column, row)
         return False
 
@@ -227,13 +227,25 @@ class Fire(Piece):
 
     def validate_move(self, column, row):
         if abs(self.grid_col - column) == 1 and self.grid_row - row == 0:
-            return True
+            return self.attack(column, row)
         elif abs(self.grid_col - column) == 2 and abs(self.grid_row - row) <= 1:
-            return True
+            return self.attack(column, row)
         elif abs(self.grid_col - column) == 3 and abs(self.grid_row - row) <= 2:
-            return True
-        else:
-            return False
+            return self.attack(column, row)
+        return False
+
+    def attack(self, column, row):
+        target_piece = self.board.positions[row-1][column-1]
+        if target_piece:
+            if target_piece.element == "earth":
+                target_piece.remove_last_position()
+                target_piece.grid_row = target_piece.start[0]
+                target_piece.grid_col = target_piece.start[1]
+                target_piece.move()
+                return True
+            else:
+                return False
+        return True
 
 
 class Water(Piece):
@@ -282,7 +294,7 @@ class Earth(Piece):
         self.move()
 
     def validate_move(self, column, row):
-        if abs(self.grid_col - column) <= 2 and abs(self.grid_row - row) <= 2:
+        if abs(self.grid_col - column) <= 12 and abs(self.grid_row - row) <= 12:
             return True
         else:
             return False
