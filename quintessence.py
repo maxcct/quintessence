@@ -176,13 +176,13 @@ class Air(Piece):
             movement = column - self.grid_col
             if self.direction == "left":
                 movement = 0 - movement
-            if movement <= 24 and movement > 0 and abs(self.grid_row - row) == 0:
+            if movement <= 5 and movement > 0 and abs(self.grid_row - row) == 0:
                 return True
         elif self.direction == "up" or self.direction == "down":
             movement = row - self.grid_row
             if self.direction == "up":
                 movement = 0 - movement
-            if movement - row <= 24 and movement > 0 and abs(self.grid_col - column) == 0:
+            if movement <= 5 and movement > 0 and abs(self.grid_col - column) == 0:
                 return True
         return False
 
