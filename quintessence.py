@@ -290,16 +290,16 @@ if __name__ == "__main__":
     board.pack(side="top", fill="both", expand="true", padx=4, pady=4)
 
     for n in range(1, board.rows+1):
-        if n == 0 or (n-1) % 4 == 0:
+        if n == 0 or (n-1) % 4 == 0 and n % 5 != 0:
             Air("one", board, n)
             Earth("two", board, n)
-        elif n % 4 == 0:
+        elif n % 4 == 0 and n % 5 != 0:
             Air("two", board, n)
             Earth("one", board, n)
-        elif (n-2) % 4 == 0:
+        elif (n-2) % 4 == 0 and n % 5 != 0:
             Fire("one", board, n)
             Water("two", board, n)
-        elif (n-3) % 4 == 0:
+        elif (n-3) % 4 == 0 and n % 5 != 0:
             Fire("two", board, n)
             Water("one", board, n)
 
