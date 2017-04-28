@@ -64,7 +64,7 @@ class GameBoard(tk.Frame):
         elif board.selected:
             if target_piece:
                 if board.selected.element == "air":
-                    if target_piece.element not in board.selected.element.prey:
+                    if target_piece.element not in board.selected.prey:
                         return
                 elif target_piece.element != board.selected.prey:
                     return
@@ -146,7 +146,7 @@ class Piece(object):
         self.player = player
         self.board = board
         self.element = element
-        self.image = tk.PhotoImage(file="%s.gif" % element)
+        self.image = tk.PhotoImage(file="%s_%s.gif" % (element, player))
         self.name = str(row) + "_" + element + "_" + player
         self.board.canvas.create_image(0,0, image=self.image, tags=(self.name, "piece"), anchor="c")
         self.grid_row = row
@@ -181,8 +181,6 @@ class Piece(object):
 class Air(Piece):
     def __init__(self, player, board, row):
         Piece.__init__(self, "air", player, board, row)
-        print self.grid_row
-        print self.grid_col
         if player == "one":
             self.direction = "right"
         else:
