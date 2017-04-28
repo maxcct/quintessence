@@ -3,7 +3,7 @@ import random
 
 
 class GameBoard(tk.Frame):
-    def __init__(self, parent, rows=24, columns=24, size=36, color1="antique white", color2="saddle brown", turn="one"):
+    def __init__(self, parent, rows=24, columns=24, size=36, color1="AntiqueWhite1", color2="AntiqueWhite2", turn="one"):
 
         self.rows = rows
         self.columns = columns
@@ -290,18 +290,22 @@ if __name__ == "__main__":
     board.pack(side="top", fill="both", expand="true", padx=4, pady=4)
 
     for n in range(1, board.rows+1):
-        if n == 0 or (n-1) % 4 == 0 and n % 5 != 0:
+        if n == 2 or n == 10 or n == 18:
             Air("one", board, n)
+        elif n == 1 or n == 9 or n == 17:
             Earth("two", board, n)
-        elif n % 4 == 0 and n % 5 != 0:
-            Air("two", board, n)
+        elif n == 8 or n == 16 or n == 24:
             Earth("one", board, n)
-        elif (n-2) % 4 == 0 and n % 5 != 0:
-            Fire("one", board, n)
+        elif n == 3 or n == 11 or n == 19:
             Water("two", board, n)
-        elif (n-3) % 4 == 0 and n % 5 != 0:
+        elif n == 4 or n == 12 or n == 20:
+            Fire("one", board, n)
+        elif n == 5 or n == 13 or n == 21:
             Fire("two", board, n)
+        elif n == 6 or n == 14 or n == 22:
             Water("one", board, n)
+        elif n == 7 or n == 15 or n == 23:
+            Air("two", board, n)
 
     board.set_positions()
 
