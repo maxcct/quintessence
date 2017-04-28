@@ -17,6 +17,7 @@ class GameBoard(tk.Frame):
         self.turn = turn
         self.turn_status = tk.Label(root, text="It is player %s's turn" % self.turn)
         self.failed = None
+        self.victory = None
 
         canvas_width = columns * size
         canvas_height = rows * size
@@ -74,8 +75,9 @@ class GameBoard(tk.Frame):
                 board.selected.remove_last_position()
                 board.selected.grid_col = target_column
                 board.selected.grid_row = target_row
-                board.selected.move()
-                board.end_turn()
+                game_continue = board.selected.move()
+                if game_continue:
+                    board.end_turn()
 
     def up(self, event, board):
         if board.selected:
@@ -118,6 +120,11 @@ class GameBoard(tk.Frame):
         self.turn = "two" if self.turn == "one" else "one"
         self.turn_status["text"] = "It is player %s's turn" % self.turn
         self.turn_status.pack()
+
+    def gameover(self, victor):
+        self.turn_status.pack_forget()
+        self.victory = tk.Label(root, text="Player %s wins!" % victor.player)
+        self.victory.pack()
 
     def refresh(self, event):
         xsize = int((event.width-1) / self.columns)
@@ -163,6 +170,10 @@ class Piece(object):
         self.column = self.board.grid_steps[self.grid_col] - self.board.size / 2
         self.board.canvas.coords(self.name, self.column, self.row)
         self.board.positions[self.grid_row-1][self.grid_col-1] = self
+        if self.check_for_victory():
+            self.board.gameover(self)
+            return False
+        return True
 
     def attack(self, column, row):
         target_piece = self.board.positions[row-1][column-1]
@@ -179,6 +190,23 @@ class Piece(object):
         self.board.canvas.delete(target)
         del target
         return True         
+
+    def check_for_victory(self):
+        column_to_check = 0
+        if ((self.grid_col == self.board.columns and self.player == "one")
+           or (self.grid_col == 1 and self.player == "two")):
+            column_to_check = self.grid_col
+        if column_to_check:
+            elements = []
+            for row in self.board.positions:
+                at_column = row[column_to_check-1]
+                if at_column:
+                    if at_column.player == self.player:
+                        elements.append(at_column.element)
+            if ("air" in elements and "fire" in elements and "water"
+                in elements and "earth" in elements):
+                return True
+        return False
 
 
 class Air(Piece):
@@ -197,7 +225,7 @@ class Air(Piece):
             movement = column - self.grid_col
             if self.direction == "left":
                 movement = 0 - movement
-            if movement <= 5 and movement > 0 and abs(self.grid_row - row) == 0:
+            if movement <= 25 and movement > 0 and abs(self.grid_row - row) == 0:
                 return self.attack(column, row)
         elif self.direction == "up" or self.direction == "down":
             movement = row - self.grid_row
@@ -228,7 +256,7 @@ class Fire(Piece):
         self.move()
 
     def validate_move(self, column, row):
-        if abs(self.grid_col - column) == 1 and self.grid_row - row == 0:
+        if abs(self.grid_col - column) <= 25 and self.grid_row - row == 0:
             return self.attack(column, row)
         elif abs(self.grid_col - column) == 2 and abs(self.grid_row - row) <= 1:
             return self.attack(column, row)
@@ -251,7 +279,7 @@ class Water(Piece):
         if self.player == "two":
             col_move = 0 - col_move
         if self.direction == "lateral":
-            if col_move <= 3 and col_move > 0 and abs(row_move) <= 1:
+            if col_move <= 25 and col_move > 0 and abs(row_move) <= 1:
                 return self.attack(column, row)
         elif self.direction == "diagonal_up" or self.direction == "diagonal_down":
             if self.direction == "diagonal_up":
@@ -273,7 +301,7 @@ class Earth(Piece):
         self.move()
 
     def validate_move(self, column, row):
-        if abs(self.grid_col - column) <= 2 and abs(self.grid_row - row) <= 2:
+        if abs(self.grid_col - column) <= 25 and abs(self.grid_row - row) <= 2:
             return self.attack(column, row)
         else:
             return False
