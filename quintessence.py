@@ -65,7 +65,10 @@ class GameBoard(tk.Frame):
             return
         elif board.selected:
             if target_piece:
-                if target_piece.element == board.selected.element:
+                if board.selected.element == "air":
+                    if target_piece.element not in board.selected.element.prey:
+                        return
+                elif target_piece.element != board.selected.prey:
                     return
                 elif target_piece.grid_col == 1 or target_piece.grid_col == board.rows:
                     return
@@ -164,6 +167,20 @@ class Piece(object):
         self.board.canvas.coords(self.name, self.column, self.row)
         self.board.positions[self.grid_row-1][self.grid_col-1] = self
 
+    def attack(self, column, row):
+        target_piece = self.board.positions[row-1][column-1]
+        if target_piece:
+            if target_piece.element == self.prey:
+                target_piece.remove_last_position()
+                target_piece.grid_row = target_piece.start[0]
+                target_piece.grid_col = target_piece.start[1]
+                target_piece.move()
+                return True
+            else:
+                return False
+        return True
+
+
 class Air(Piece):
     def __init__(self, player, board):
         Piece.__init__(self, "air", player, board)
@@ -176,6 +193,7 @@ class Air(Piece):
             self.grid_row = 20
             self.board.p2_pieces.append(self)
         self.start = (self.grid_row, self.grid_col)
+        self.prey = ("water", "fire")
         self.move()
 
     def validate_move(self, column, row):
@@ -196,19 +214,16 @@ class Air(Piece):
     def attack(self, column, row):
         target_piece = self.board.positions[row-1][column-1]
         if target_piece:
-            if target_piece.element != "earth":
-                if random.random() > 0.5:
-                    target_piece.remove_last_position()
-                    target_piece.grid_row = target_piece.start[0]
-                    target_piece.grid_col = target_piece.start[1]
-                    target_piece.move()
-                    return True
-                else:
-                    self.board.failed = tk.Label(root, text="The wind did not blow strongly enough")
-                    self.board.failed.pack()
-                    self.board.end_turn()
-                    return False
+            if random.random() > 0.5:
+                target_piece.remove_last_position()
+                target_piece.grid_row = target_piece.start[0]
+                target_piece.grid_col = target_piece.start[1]
+                target_piece.move()
+                return True
             else:
+                self.board.failed = tk.Label(root, text="The wind did not blow strongly enough")
+                self.board.failed.pack()
+                self.board.end_turn()
                 return False
         return True
 
@@ -223,6 +238,7 @@ class Fire(Piece):
             self.grid_row = 15
             self.board.p2_pieces.append(self)
         self.start = (self.grid_row, self.grid_col)
+        self.prey = "earth"
         self.move()
 
     def validate_move(self, column, row):
@@ -233,19 +249,6 @@ class Fire(Piece):
         elif abs(self.grid_col - column) == 3 and abs(self.grid_row - row) <= 2:
             return self.attack(column, row)
         return False
-
-    def attack(self, column, row):
-        target_piece = self.board.positions[row-1][column-1]
-        if target_piece:
-            if target_piece.element == "earth":
-                target_piece.remove_last_position()
-                target_piece.grid_row = target_piece.start[0]
-                target_piece.grid_col = target_piece.start[1]
-                target_piece.move()
-                return True
-            else:
-                return False
-        return True
 
 
 class Water(Piece):
@@ -259,6 +262,7 @@ class Water(Piece):
             self.grid_row = 10
             self.board.p2_pieces.append(self)
         self.start = (self.grid_row, self.grid_col)
+        self.prey = "fire"
         self.move()
 
     def validate_move(self, column, row):
@@ -268,15 +272,15 @@ class Water(Piece):
             col_move = 0 - col_move
         if self.direction == "lateral":
             if col_move <= 3 and col_move > 0 and abs(row_move) <= 1:
-                return True
+                return self.attack(column, row)
         elif self.direction == "diagonal_up" or self.direction == "diagonal_down":
             if self.direction == "diagonal_up":
                 row_move = 0 - row_move
             if col_move >= 0 and col_move <= 3 and row_move >= 0 and row_move <= 3:
                 if row_move == 1 or row_move == 2 and col_move == 0:
-                    return True
+                    return self.attack(column, row)
                 elif (col_move <= 2 and row_move == 0) or (col_move <= 3 and row_move > 0):
-                    return True
+                    return self.attack(column, row)
         else:
             return False
 
@@ -291,11 +295,12 @@ class Earth(Piece):
             self.grid_row = 5
             self.board.p2_pieces.append(self)
         self.start = (self.grid_row, self.grid_col)
+        self.prey = "air"
         self.move()
 
     def validate_move(self, column, row):
-        if abs(self.grid_col - column) <= 12 and abs(self.grid_row - row) <= 12:
-            return True
+        if abs(self.grid_col - column) <= 2 and abs(self.grid_row - row) <= 2:
+            return self.attack(column, row)
         else:
             return False
 
