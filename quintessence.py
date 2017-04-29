@@ -70,7 +70,9 @@ class GameBoard(tk.Frame):
                 # if board.selected.element == "air":
                 #     if target_piece.element not in board.selected.prey:
                 #         return
-                if target_piece.element != board.selected.prey:
+                if target_piece.player == board.turn:
+                    board.selected = target_piece
+                elif target_piece.element != board.selected.prey:
                     return
                 elif target_piece.grid_col == 1 or target_piece.grid_col == board.rows:
                     return
