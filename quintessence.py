@@ -1,5 +1,5 @@
 import Tkinter as tk
-import random
+# import random
 
 
 class GameBoard(tk.Frame):
@@ -241,7 +241,7 @@ class Air(Piece):
             movement = column - self.grid_col
             if self.direction == "left":
                 movement = 0 - movement
-            if movement <= 25 and movement > 0 and abs(self.grid_row - row) == 0:
+            if movement <= 5 and movement > 0 and abs(self.grid_row - row) == 0:
                 return self.attack(column, row)
         elif self.direction == "up" or self.direction == "down":
             movement = row - self.grid_row
@@ -272,11 +272,15 @@ class Fire(Piece):
         self.move()
 
     def validate_move(self, column, row):
-        if abs(self.grid_col - column) <= 25 and self.grid_row - row == 0:
+        col_movement = self.grid_col - column
+        row_movement = self.grid_row - row
+        if self.player == "one":
+            col_movement = 0 - col_movement
+        if col_movement <= 3 and col_movement > 0 and row_movement == 0:
             return self.attack(column, row)
-        elif abs(self.grid_col - column) == 2 and abs(self.grid_row - row) <= 1:
+        elif col_movement == 2 and abs(row_movement) <= 1:
             return self.attack(column, row)
-        elif abs(self.grid_col - column) == 3 and abs(self.grid_row - row) <= 2:
+        elif col_movement == 3 and abs(row_movement) <= 2:
             return self.attack(column, row)
         return False
 
@@ -295,7 +299,7 @@ class Water(Piece):
         if self.player == "two":
             col_move = 0 - col_move
         if self.direction == "lateral":
-            if col_move <= 25 and col_move > 0 and abs(row_move) <= 1:
+            if col_move <= 3 and col_move > 0 and abs(row_move) <= 1:
                 return self.attack(column, row)
         elif self.direction == "diagonal_up" or self.direction == "diagonal_down":
             if self.direction == "diagonal_up":
@@ -317,7 +321,7 @@ class Earth(Piece):
         self.move()
 
     def validate_move(self, column, row):
-        if abs(self.grid_col - column) <= 25 and abs(self.grid_row - row) <= 2:
+        if abs(self.grid_col - column) <= 2 and abs(self.grid_row - row) <= 2:
             return self.attack(column, row)
         else:
             return False
