@@ -307,9 +307,9 @@ class Water(Piece):
             if self.direction == "diagonal_up":
                 row_move = 0 - row_move
             if col_move >= 0 and col_move <= 3 and row_move >= 0 and row_move <= 3:
-                if row_move == 1 or row_move == 2 and col_move == 0:
+                if (col_move <= 1 and row_move <= 2) or (col_move == 2 and row_move >= 2):
                     return self.attack(column, row)
-                elif (col_move <= 2 and row_move == 0) or (col_move <= 3 and row_move > 0):
+                elif col_move == 1 or (row_move == 3 and col_move == 3):
                     return self.attack(column, row)
         else:
             return False
